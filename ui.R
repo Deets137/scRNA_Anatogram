@@ -43,7 +43,7 @@ shinyUI(fluidPage(
     ),
     #Ask GPT
     # Show a plot of the generated distribution
-    mainPanel(
+   mainPanel(
       fluidRow(
         splitLayout(
           cellWidths = c("50%", "50%"),

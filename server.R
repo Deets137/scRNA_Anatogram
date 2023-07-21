@@ -29,7 +29,7 @@ shinyServer(function(input, output) {
 
 
   output$fill <- renderUI({
-    if (is.null(anat_key())) {
+    if (is.null(anat_key1())) {
       return(NULL)
     }
     selectInput("fillInput", "Fill based on colour or value. Both colour and value can be changed in the table",
@@ -39,7 +39,28 @@ shinyServer(function(input, output) {
 
 
 
-  anat_key <- reactive({
+  anat_key1 <- reactive({
+    if (is.null(input$SpeciesInput)) {
+      return(NULL)
+    }
+    selectedSpecies <- input$SpeciesInput
+    if (selectedSpecies == "human_male" ) {
+      hgMale_key
+    } else if (selectedSpecies =="human_female" ) {
+      hgFemale_key
+    } else if (selectedSpecies=="mouse_male" ) {
+      mmMale_key
+    } else if (selectedSpecies=="mouse_female" ) {
+      mmFemale_key
+    } else if (selectedSpecies =="cell" ) {
+      cell_key[["cell"]]
+    } else {
+      other_key[[selectedSpecies]]
+    }
+
+  })
+
+  anat_key2 <- reactive({
     if (is.null(input$SpeciesInput)) {
       return(NULL)
     }
@@ -61,19 +82,19 @@ shinyServer(function(input, output) {
   })
 
   output$Organs1 <- renderUI({
-    if (is.null(anat_key())) {
+    if (is.null(anat_key1())) {
       return(NULL)
     }
-    organs <- anat_key()$organ
-    pickerInput("OrgansInput","Organs - Select before changing value", choices = organs, selected = organs, options = list(`actions-box` = TRUE),multiple = T)
+    organs <- anat_key1()$organ
+    pickerInput("OrgansInput1","Organs - Select before changing value", choices = organs, selected = organs, options = list(`actions-box` = TRUE),multiple = T)
   })
 
   output$Organs2 <- renderUI({
-    if (is.null(anat_key())) {
+    if (is.null(anat_key2())) {
       return(NULL)
     }
-    organs <- anat_key()$organ
-    pickerInput("OrgansInput","Organs - Select before changing value", choices = organs, selected = organs, options = list(`actions-box` = TRUE),multiple = T)
+    organs <- anat_key2()$organ
+    pickerInput("OrgansInput2","Organs - Select before changing value", choices = organs, selected = organs, options = list(`actions-box` = TRUE),multiple = T)
   })
 
   output$valueColour <- renderUI({
@@ -87,7 +108,7 @@ shinyServer(function(input, output) {
 
 
   organism <- reactive({
-    if (is.null(anat_key())) {
+    if (is.null(anat_key1())) {
       return(NULL)
     }
     selectedSpecies <- input$SpeciesInput
@@ -106,7 +127,7 @@ shinyServer(function(input, output) {
 
 
   sex <- reactive({
-    if (is.null(anat_key())) {
+    if (is.null(anat_key1())) {
       return(NULL)
     }
     selectedSpecies <- input$SpeciesInput
@@ -122,36 +143,36 @@ shinyServer(function(input, output) {
 
   Reactive_key <- reactiveValues(data = NULL)
   Reactive_key$data <-reactive({
-    if (is.null(anat_key())) {
+    if (is.null(anat_key1())) {
       return(NULL)
     }
-    anat_key()})
+    anat_key1()})
 
 
 
   output$mytable2 <- renderRHandsontable({
-    if (is.null(anat_key())) {
+    if (is.null(anat_key1())) {
       return(NULL)
     }
     #print(class())
 
 
     organTable <- Reactive_key$data()
-    organTable <- organTable[organTable$organ %in% input$OrgansInput,]
+    organTable <- organTable[organTable$organ %in% input$OrgansInput1,]
 
     rhandsontable(organTable)
 
   })
 
   output$mytable22 <- renderRHandsontable({
-    if (is.null(anat_key())) {
+    if (is.null(anat_key2())) {
       return(NULL)
     }
     #print(class())
 
 
     organTable <- Reactive_key$data()
-    organTable <- organTable[organTable$organ %in% input$OrgansInput,]
+    organTable <- organTable[organTable$organ %in% input$OrgansInput2,]
 
     rhandsontable(organTable)
 
@@ -160,26 +181,26 @@ shinyServer(function(input, output) {
     reactiveTemp <- Reactive_key$data()
     plotAnat <- hot_to_r(input$mytable2)
     reactiveTemp$value[match(plotAnat$organ, reactiveTemp$organ)] <- plotAnat$value
-   # head( Reactive_key$data()[match(plotAnat$organ, Reactive_key$data()$organ),])
+    # head( Reactive_key$data()[match(plotAnat$organ, Reactive_key$data()$organ),])
     print(head( reactiveTemp$organ))
     print(class(plotAnat))
     Reactive_key$data <- reactiveTemp
-      })
+  })
 
 
   output$gganatogram <- renderPlot({
-    if (is.null(anat_key()) | is.null(input$mytable2)) {
+    if (is.null(anat_key1()) | is.null(input$mytable2)) {
       return(NULL)
     }
 
 
     plotAnat <- hot_to_r(input$mytable2)
-    if (length(input$OrgansInput)<1) {
+    if (length(input$OrgansInput1)<1) {
       p <- gganatogram(fillOutline= input$col, outline=input$showOutline, organism=organism(), sex=sex(), fill=input$fillInput) +theme_void() + coord_fixed() + ggtitle(input$ggtitle) +   theme(plot.title = element_text(hjust = 0.5))
       #p2 <- gganatogram(fillOutline= input$col, outline=input$showOutline, organism=organism(), sex=sex(), fill=input$fillInput) +theme_void() + coord_fixed() + ggtitle(input$ggtitle) +   theme(plot.title = element_text(hjust = 0.5))
     } else {
       plotOrgans <- plotAnat
-      plotOrgans <- plotOrgans[plotOrgans$organ %in% input$OrgansInput, ]
+      plotOrgans <- plotOrgans[plotOrgans$organ %in% input$OrgansInput1, ]
       p <- gganatogram(plotOrgans, outline=input$showOutline, fillOutline= input$col, organism=organism(), sex=sex(), fill=input$fillInput) +theme_void() + coord_fixed() +ggtitle(input$ggtitle) +  theme(plot.title = element_text(hjust = 0.5))
       #p2 <- gganatogram(plotOrgans, outline=input$showOutline, fillOutline= input$col, organism=organism(), sex=sex(), fill=input$fillInput) +theme_void() + coord_fixed() +ggtitle(input$ggtitle) +  theme(plot.title = element_text(hjust = 0.5))
 
@@ -200,24 +221,24 @@ shinyServer(function(input, output) {
       }
     }
 
-  p
-  #p2
+    p
+    #p2
 
   })
 
   output$gganatogram2 <- renderPlot({
-    if (is.null(anat_key()) | is.null(input$mytable2)) {
+    if (is.null(anat_key2()) | is.null(input$mytable2)) {
       return(NULL)
     }
 
 
     plotAnat <- hot_to_r(input$mytable2)
-    if (length(input$OrgansInput)<1) {
+    if (length(input$OrgansInput2)<1) {
       p <- gganatogram(fillOutline= input$col, outline=input$showOutline, organism=organism(), sex=sex(), fill=input$fillInput) +theme_void() + coord_fixed() + ggtitle(input$ggtitle) +   theme(plot.title = element_text(hjust = 0.5))
       #p2 <- gganatogram(fillOutline= input$col, outline=input$showOutline, organism=organism(), sex=sex(), fill=input$fillInput) +theme_void() + coord_fixed() + ggtitle(input$ggtitle) +   theme(plot.title = element_text(hjust = 0.5))
     } else {
       plotOrgans <- plotAnat
-      plotOrgans <- plotOrgans[plotOrgans$organ %in% input$OrgansInput, ]
+      plotOrgans <- plotOrgans[plotOrgans$organ %in% input$OrgansInput2, ]
       p <- gganatogram(plotOrgans, outline=input$showOutline, fillOutline= input$col, organism=organism(), sex=sex(), fill=input$fillInput) +theme_void() + coord_fixed() +ggtitle(input$ggtitle) +  theme(plot.title = element_text(hjust = 0.5))
       #p2 <- gganatogram(plotOrgans, outline=input$showOutline, fillOutline= input$col, organism=organism(), sex=sex(), fill=input$fillInput) +theme_void() + coord_fixed() +ggtitle(input$ggtitle) +  theme(plot.title = element_text(hjust = 0.5))
 
